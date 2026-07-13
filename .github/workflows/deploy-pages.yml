@@ -1,0 +1,68 @@
+name: Deploy Pages
+
+# Push-to-main ONLY, and only when the build's actual inputs change. This
+# workflow is the ONLY path that can publish to bench.tps.dev — a submission
+# PR (validate.yml, pull_request-triggered) never runs this, never touches
+# Pages. No workflow_dispatch, no schedule, no pull_request_target: a
+# deployment only ever happens as a direct consequence of something landing
+# on main.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "results/**"
+      - "site/**"
+      - "schema/**"
+
+# Minimal, top-level: contents:read to build, pages:write + id-token:write to
+# publish via OIDC. No secrets are used anywhere in this workflow — the
+# GitHub Pages deploy action authenticates via the workflow's own OIDC token,
+# not a stored credential.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one deployment in flight at a time; never cancel one mid-publish.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Reads every results/**/*.json, schema-validates, emits site/dist/.
+      # Skip-and-warn on invalid result files — never fatal.
+      - name: Build site
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        run: node site/build.mjs
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

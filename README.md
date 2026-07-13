@@ -59,7 +59,15 @@ Each result reports precision@3 and MRR, aggregate and per query-kind (`stress`/
 
 ## Where this data is used
 
-The accumulated `results/` matrix is the data source for the (upcoming) benchmark matrix site and an agent-queryable MCP surface — both read straight from this repo's `results/` directory; there's no separate database to keep in sync.
+The accumulated `results/` matrix is the data source for [bench.tps.dev](https://bench.tps.dev) (below) and an (upcoming) agent-queryable MCP surface — both read straight from this repo's `results/` directory; there's no separate database to keep in sync.
+
+## bench.tps.dev — the matrix site
+
+[bench.tps.dev](https://bench.tps.dev) is a static, server-rendered page: every `results/**/*.json` in this repo, schema-validated and pivoted into a model × host matrix (precision@3, MRR, ms/embed, peak RSS, backend — with a per-row `<details>` for the per-kind breakdown). No client framework, no client-side JS, no database — the page is regenerated from scratch on every relevant push.
+
+It carries the same model-pure caveat as above, as a banner on the page itself, not a footnote: these numbers are exact-cosine recall for the embedding model alone, not a prediction of Flair's production (HNSW + BM25-hybrid) recall.
+
+**How it updates**: `.github/workflows/deploy-pages.yml` runs `site/build.mjs` and redeploys to GitHub Pages on every push to `main` that touches `results/**`, `site/**`, or `schema/**` — so a merged submission PR (or a schema/site change) is live within a couple of minutes, with no manual step. It never runs against a PR branch; a submission PR only ever exercises `validate.yml`. Invalid or unparseable result files are skipped with a warning rather than failing the build.
 
 ## Repo layout
 
@@ -73,6 +81,8 @@ scripts/
   lib/
     forbidden-content.mjs  hostname/path/username content sweep
     naming.mjs              the results/<model-slug>/<host-label>/<utc-iso>.json convention
+site/
+  build.mjs           static build for bench.tps.dev — reads results/, emits site/dist/
 results/
   <model-slug>/<host-label>/<utc-iso>.json   submitted results
 ```
