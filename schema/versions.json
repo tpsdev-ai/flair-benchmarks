@@ -1,0 +1,4 @@
+{
+  "$comment": "Discriminator map: result JSON toolVersion -> schema file. Additive-only — new entries get added when a compatible flair-bench release ships (same shape, new toolVersion) or when a shape change ships as a new schema/result.vN.json; existing entries are never repointed to a different schema file. .github/workflows/validate.yml looks up a submitted result's toolVersion here to pick which schema to ajv-validate against; an unmapped toolVersion fails validation with a clear message (add the mapping, and a new schema file if the shape actually changed, in a separate PR).",
+  "0.1.0": "result.v1.json"
+}

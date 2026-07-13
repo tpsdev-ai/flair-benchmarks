@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/tpsdev-ai/flair-benchmarks/main/schema/result.v1.json",
+  "title": "flair-bench share result v1",
+  "description": "Schema for a single --share result JSON emitted by @tpsdev-ai/flair-bench (tpsdev-ai/flair packages/flair-bench). Derived byte-for-byte from that package's ShareDocument type (src/types.ts) and buildShareDocument (src/share.ts) as of flair main, toolVersion 0.1.0 — see schema/versions.json for which toolVersion(s) this file covers. Additive-only discipline: this file is never edited once a toolVersion maps to it; a shape change ships as schema/result.v2.json (etc.) with a new schema/versions.json entry, never a modification here. Strict: additionalProperties is false at every level, so hostname/filesystem-path/username fields (which the tool's own privacy contract forbids — see share.ts's header) are rejected by omission, in addition to the separate forbidden-content sweep in .github/workflows/validate.yml.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["toolVersion", "timestamp", "model", "hardware", "results"],
+  "properties": {
+    "toolVersion": {
+      "type": "string",
+      "description": "@tpsdev-ai/flair-bench version that produced this document (version.ts's TOOL_VERSION). Used as the schema-selection discriminator — see schema/versions.json.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$"
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "ISO-8601 UTC timestamp of the run (new Date().toISOString() in share.ts).",
+      "format": "date-time"
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "fileBasename", "sha256", "quant", "paramsApprox", "dims"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Model family name, derived from fileBasename with the .gguf extension and quant/variant suffix stripped (share.ts's deriveModelName).",
+          "minLength": 1
+        },
+        "fileBasename": {
+          "type": "string",
+          "description": "Basename of the GGUF file — NEVER a full path. share.ts's privacy contract forbids a path separator here; this is also checked independently by the forbidden-content sweep.",
+          "minLength": 1,
+          "pattern": "^[^/\\\\]+$"
+        },
+        "sha256": {
+          "type": "string",
+          "description": "SHA-256 of the GGUF file, lowercase hex.",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "quant": {
+          "type": "string",
+          "description": "Quantization label, e.g. Q4_K_M, Q8_0 (ModelIdentity.quant).",
+          "minLength": 1
+        },
+        "paramsApprox": {
+          "type": "integer",
+          "description": "Approximate total parameter count, summed from the GGUF's tensor index (ModelIdentity.paramsApprox).",
+          "minimum": 0
+        },
+        "dims": {
+          "type": "integer",
+          "description": "Embedding vector dimensionality (ModelIdentity.dims).",
+          "minimum": 1
+        }
+      }
+    },
+    "hardware": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platform", "arch", "cpuModel", "ramGiB", "gpu", "backend"],
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Freeform, user-chosen host/infra grouping label (--label). NEVER auto-filled from the machine's real hostname. Optional — omitted entirely (not empty string) when the caller passed none.",
+          "minLength": 1
+        },
+        "platform": {
+          "type": "string",
+          "description": "os.platform(), e.g. darwin, linux, win32."
+        },
+        "arch": {
+          "type": "string",
+          "description": "os.arch(), e.g. arm64, x64."
+        },
+        "cpuModel": {
+          "type": "string",
+          "description": "CPU model string from os.cpus()[0].model."
+        },
+        "ramGiB": {
+          "type": "number",
+          "description": "Total system RAM in GiB, rounded to 1 decimal (share.ts).",
+          "minimum": 0
+        },
+        "gpu": {
+          "type": ["string", "null"],
+          "description": "Joined GPU device name(s) node-llama-cpp reports, or null when backend is cpu."
+        },
+        "backend": {
+          "type": "string",
+          "description": "Compute backend node-llama-cpp actually loaded (ComputeBackend).",
+          "enum": ["metal", "cuda", "vulkan", "cpu"]
+        }
+      }
+    },
+    "results": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["aggregate", "perKind", "msPerEmbedSerialWarm", "peakRssMiB"],
+      "properties": {
+        "aggregate": { "$ref": "#/$defs/stat" },
+        "perKind": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Record<QueryKind, PerKindStat> — the four fixed query kinds the flair-bench corpus defines (src/corpus-v2.ts). All four are always present.",
+          "required": ["stress", "trap", "hard", "clean"],
+          "properties": {
+            "stress": { "$ref": "#/$defs/stat" },
+            "trap": { "$ref": "#/$defs/stat" },
+            "hard": { "$ref": "#/$defs/stat" },
+            "clean": { "$ref": "#/$defs/stat" }
+          }
+        },
+        "msPerEmbedSerialWarm": {
+          "type": "number",
+          "description": "Serial, warm (post-warmup), N>=64 embed calls; mean ms/embed, rounded to 2 decimals.",
+          "minimum": 0
+        },
+        "peakRssMiB": {
+          "type": "number",
+          "description": "Peak process RSS delta (MiB) observed during this model's load+embed phase, minus the pre-load baseline, rounded to 1 decimal."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "stat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["n", "p3", "mrr"],
+      "properties": {
+        "n": {
+          "type": "integer",
+          "description": "Query count this stat is computed over.",
+          "minimum": 0
+        },
+        "p3": {
+          "type": "number",
+          "description": "Precision@3.",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "mrr": {
+          "type": "number",
+          "description": "Mean reciprocal rank.",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    }
+  }
+}

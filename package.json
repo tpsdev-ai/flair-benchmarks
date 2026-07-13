@@ -1,0 +1,14 @@
+{
+  "name": "flair-benchmarks",
+  "private": true,
+  "type": "module",
+  "description": "Submission/provenance layer for flair-bench results (tpsdev-ai/flair packages/flair-bench). No application code — just schema, CI validation scripts, and results/.",
+  "scripts": {
+    "validate": "node scripts/validate-results.mjs",
+    "schema-sync": "node scripts/check-schema-sync.mjs"
+  },
+  "devDependencies": {
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1"
+  }
+}
