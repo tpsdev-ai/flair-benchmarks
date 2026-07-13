@@ -1,0 +1,52 @@
+{
+  "toolVersion": "0.1.0",
+  "timestamp": "2026-07-13T14:57:11.812Z",
+  "model": {
+    "name": "nomic-embed-text-v1.5",
+    "fileBasename": "nomic-embed-text-v1.5.Q8_0.gguf",
+    "sha256": "3e24342164b3d94991ba9692fdc0dd08e3fd7362e0aacc396a9a5c54a544c3b7",
+    "quant": "Q8_0",
+    "paramsApprox": 136727040,
+    "dims": 768
+  },
+  "hardware": {
+    "label": "rockit-m4",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuModel": "Apple M4",
+    "ramGiB": 16,
+    "gpu": "Apple M4",
+    "backend": "metal"
+  },
+  "results": {
+    "aggregate": {
+      "p3": 0.9841269841269841,
+      "mrr": 0.9542328042328042,
+      "n": 126
+    },
+    "perKind": {
+      "stress": {
+        "p3": 1,
+        "mrr": 0.9705882352941176,
+        "n": 17
+      },
+      "trap": {
+        "p3": 0.9411764705882353,
+        "mrr": 0.9529411764705882,
+        "n": 34
+      },
+      "hard": {
+        "p3": 1,
+        "mrr": 0.9456521739130435,
+        "n": 46
+      },
+      "clean": {
+        "p3": 1,
+        "mrr": 0.9597701149425287,
+        "n": 29
+      }
+    },
+    "msPerEmbedSerialWarm": 7.38,
+    "peakRssMiB": 248.5
+  }
+}
